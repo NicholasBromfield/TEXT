@@ -1,0 +1,63 @@
+
+#include <iostream>
+/*读取点云信息*/
+pcl::PointClouod<pcl::PointXYZ>::Ptr read_cloud_point(std::string const &file_path){
+	//loadingfirst scan.
+	pcl::PointCloud<pcl::pointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	if (pcl::io::loadPCDFile<pc1::PointXYZ>(file_path,*cloud) == -1)
+		{PCL_ERROR("Couldn't read the pcd file\n");
+			return nllptr;
+		}			
+		returncloud;
+}
+
+
+/*从main函数中分别读取点云*/
+auto target_cloud =read_cloud_point("cloud1.pad");
+std::cout << "Loaded"<< target_cloud -> size()<<"data points from cloud1.pcd"<<
+	std::endl;
+auto input_cloud = read_cloud_point("cloud2.pcd");
+std::cout << "Loaded" << input_cloud->size()<<"data points from cloud2.pcd"<<
+	std::endl;
+
+Loaded 112586 data points from cloud1.pcd
+Loaded 112624 data points from cloud2.pcd
+
+/*过滤输入点云*/
+pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud < pcl::
+	PointXYZ>);
+pcl::ApproximateVoxelGrid<pcl::Pcl::PointXYZ > approximate_voxel_filter;
+approximate_voxel_filter.setLeafSize(0.2,0.2,0.2);
+approximate_voxel_filter.setInputCloud(input_cloud);
+approximate_voxel_filter.filter(*filtered_cloud)
+
+std::cout << "filtered cloud contains" << filtered_cloud ->size() <<"data points
+	from cloud2.pcd" << std::endl;
+
+
+/*过滤后的扫描点数量只有原来10%*/
+Filtered cloud contains 12433data points from cloud2.pcd
+
+/*初始化NDT并且设置NDT参数*/
+pcl::NormalDistributionsTransform < pcl:: PointXYZ,PCL::PointXYZ > ndt;
+ndt.setTransformationEpsilon(0.01);
+ndt.setStepSize(0.1);
+ndt.setResolution(1.0);
+
+ndt.setMaximumIterations(35);
+ndt.setInputSource(filtered_cloud);
+ndt.setInputTarget(target_cloud);
+/*初始化变换参数并开始优化*/
+Eigen::AngleAxisf init_rotation(0.6931,Eigen::Vector3f::Unitz());
+Eigen::Translation3f init_translation(1.79387,0.720047,0);
+Eigen::Matrix4f init_guess = (init_translation * init_rotation).matrix();
+
+pcl::PointCloud < pcl::PointXYZ > :: Ptr output_cloud (new pcl::PointCloud < pcl::
+	PointXYZ > );
+
+ndt.align(*output_cloud,init_guess);
+std::cout << "Normal Distribution Transform has converged:" << ndt.hasConverged()
+/*保存配准以后的点云图，输出文件到 cloud3.pcd*/
+pcl::TransformPointCloud(*input_cloud,* output_cloud,ndt.getFinalTransformation());
+pcl::io::savePCDFileASCII("../cloud3.pcd,*output_cloud");
+
